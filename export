@@ -1,0 +1,194 @@
+--------------------------------------------------------
+--  File created - Friday-October-29-2021   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Table CATEGORII
+--------------------------------------------------------
+
+  CREATE TABLE "C##FARMACIA"."CATEGORII" ("ID_CATEGORIE" NUMBER, "DENUMIRE_CATEGORIE" VARCHAR2(20)) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Table COMENZI
+--------------------------------------------------------
+
+  CREATE TABLE "C##FARMACIA"."COMENZI" ("ID_COMANDA" NUMBER, "ID_FARMACIE" NUMBER, "ID_PRODUS" NUMBER, "DATA_COMENZII" DATE, "CANTITATE" NUMBER) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Table DEPOZIT
+--------------------------------------------------------
+
+  CREATE TABLE "C##FARMACIA"."DEPOZIT" ("ID_PRODUS" NUMBER, "NUME_PRODUS" VARCHAR2(20), "ID_CATEGORIE" NUMBER, "PRET" NUMBER) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Table FARMACII
+--------------------------------------------------------
+
+  CREATE TABLE "C##FARMACIA"."FARMACII" ("ID_FARMACIE" NUMBER, "NUME_FARMACIE" VARCHAR2(20)) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for View COMANDA_MAXIMA
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."COMANDA_MAXIMA" ("TOTAL_MAXIM") AS SELECT "TOTAL_MAXIM" FROM
+(SELECT MAX(suma_totala) AS total_maxim FROM total_comenzi)
+--------------------------------------------------------
+--  DDL for View COMENZI_2021
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."COMENZI_2021" ("ID_COMANDA", "NUME_FARMACIE", "PRET", "CANTITATE", "AN") AS SELECT "ID_COMANDA","NUME_FARMACIE","PRET","CANTITATE","AN" FROM
+(SELECT  comenzi.id_comanda, farmacii.nume_farmacie , depozit.pret, comenzi.cantitate, EXTRACT(YEAR FROM comenzi.data_comenzii) AN FROM comenzi, farmacii, depozit 
+WHERE farmacii.id_farmacie = comenzi.id_farmacie AND  comenzi.id_produs = depozit.id_produs)
+--------------------------------------------------------
+--  DDL for View COMENZI_DONA
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."COMENZI_DONA" ("ID_COMANDA", "NUME_PRODUS", "NUME_FARMACIE", "PRET", "CANTITATE", "LUNA") AS SELECT "ID_COMANDA","NUME_PRODUS","NUME_FARMACIE","PRET","CANTITATE","LUNA" FROM
+(SELECT  comenzi.id_comanda, depozit.nume_produs, farmacii.nume_farmacie , depozit.pret, comenzi.cantitate, EXTRACT(MONTH FROM comenzi.data_comenzii) luna FROM comenzi, farmacii, depozit 
+WHERE farmacii.nume_farmacie = 'Dona' AND farmacii.id_farmacie = comenzi.id_farmacie AND comenzi.id_produs = depozit.id_produs AND comenzi.data_comenzii>='01-AUG-21' AND comenzi.data_comenzii<='31-AUG-21')
+--------------------------------------------------------
+--  DDL for View COMENZI_VLAD
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."COMENZI_VLAD" ("ID_COMANDA", "NUME_PRODUS", "NUME_FARMACIE", "DENUMIRE_CATEGORIE", "AN") AS SELECT "ID_COMANDA","NUME_PRODUS","NUME_FARMACIE","DENUMIRE_CATEGORIE","AN" FROM
+(SELECT  comenzi.id_comanda, depozit.nume_produs, farmacii.nume_farmacie , categorii.denumire_categorie, EXTRACT(YEAR FROM comenzi.data_comenzii) an FROM comenzi, farmacii, depozit, categorii
+WHERE farmacii.nume_farmacie = 'Vlad' AND categorii.denumire_categorie = 'antibiotice' AND comenzi.id_produs=depozit.id_produs AND depozit.id_categorie=categorii.id_categorie 
+AND comenzi.id_farmacie = farmacii.id_farmacie)
+--------------------------------------------------------
+--  DDL for View NUMAR_COMENZI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."NUMAR_COMENZI" ("NR_COMENZI", "SUMA_TOTALA") AS SELECT "NR_COMENZI","SUMA_TOTALA" FROM
+(SELECT  COUNT(id_comanda) AS nr_comenzi, SUM(pret * cantitate) AS suma_totala FROM comenzi_dona)
+--------------------------------------------------------
+--  DDL for View TOTAL_COMENZI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE VIEW "C##FARMACIA"."TOTAL_COMENZI" ("NUME_FARMACIE", "AN", "NR_COMENZI", "SUMA_TOTALA") AS SELECT "NUME_FARMACIE","AN","NR_COMENZI","SUMA_TOTALA" FROM
+(SELECT nume_farmacie, an, COUNT(id_comanda) AS nr_comenzi, SUM(pret * cantitate) AS suma_totala FROM comenzi_2021 WHERE an=2021  GROUP BY nume_farmacie, an)
+REM INSERTING into C##FARMACIA.CATEGORII
+SET DEFINE OFF;
+Insert into C##FARMACIA.CATEGORII (ID_CATEGORIE,DENUMIRE_CATEGORIE) values (1,'antibiotice');
+Insert into C##FARMACIA.CATEGORII (ID_CATEGORIE,DENUMIRE_CATEGORIE) values (2,'analgezice');
+Insert into C##FARMACIA.CATEGORII (ID_CATEGORIE,DENUMIRE_CATEGORIE) values (3,'vitamine');
+Insert into C##FARMACIA.CATEGORII (ID_CATEGORIE,DENUMIRE_CATEGORIE) values (4,'anabolizante');
+Insert into C##FARMACIA.CATEGORII (ID_CATEGORIE,DENUMIRE_CATEGORIE) values (5,'antipiretice');
+REM INSERTING into C##FARMACIA.COMENZI
+SET DEFINE OFF;
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (1,1,7,to_date('12-AUG-21','DD-MON-RR'),10);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (2,1,5,to_date('28-JUN-21','DD-MON-RR'),5);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (3,1,8,to_date('15-MAY-21','DD-MON-RR'),8);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (4,1,2,to_date('30-AUG-21','DD-MON-RR'),7);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (5,1,9,to_date('05-SEP-20','DD-MON-RR'),1);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (6,2,1,to_date('19-APR-21','DD-MON-RR'),12);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (7,2,5,to_date('30-NOV-21','DD-MON-RR'),20);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (8,2,2,to_date('24-AUG-20','DD-MON-RR'),4);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (9,2,2,to_date('07-APR-21','DD-MON-RR'),6);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (10,2,4,to_date('13-OCT-21','DD-MON-RR'),15);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (11,3,1,to_date('21-AUG-21','DD-MON-RR'),6);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (12,3,10,to_date('20-DEC-20','DD-MON-RR'),3);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (13,3,8,to_date('17-SEP-21','DD-MON-RR'),7);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (14,3,3,to_date('03-JUL-21','DD-MON-RR'),17);
+Insert into C##FARMACIA.COMENZI (ID_COMANDA,ID_FARMACIE,ID_PRODUS,DATA_COMENZII,CANTITATE) values (15,3,6,to_date('27-MAY-21','DD-MON-RR'),5);
+REM INSERTING into C##FARMACIA.DEPOZIT
+SET DEFINE OFF;
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (1,'augmentin',1,22);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (2,'zinnat',1,29);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (3,'algocalmin',2,10);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (4,'nurofen',2,13);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (5,'paracetamol',5,5);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (6,'panadol',5,7);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (7,'vitamina A',3,25);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (8,'vitamina D3',3,26);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (9,'anapolon',4,133);
+Insert into C##FARMACIA.DEPOZIT (ID_PRODUS,NUME_PRODUS,ID_CATEGORIE,PRET) values (10,'epocen',4,68);
+REM INSERTING into C##FARMACIA.FARMACII
+SET DEFINE OFF;
+Insert into C##FARMACIA.FARMACII (ID_FARMACIE,NUME_FARMACIE) values (1,'Dona');
+Insert into C##FARMACIA.FARMACII (ID_FARMACIE,NUME_FARMACIE) values (2,'Vlad');
+Insert into C##FARMACIA.FARMACII (ID_FARMACIE,NUME_FARMACIE) values (3,'Catena');
+--------------------------------------------------------
+--  DDL for Index CATEGORII_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "C##FARMACIA"."CATEGORII_PK" ON "C##FARMACIA"."CATEGORII" ("ID_CATEGORIE") PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Index COMENZI_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "C##FARMACIA"."COMENZI_PK" ON "C##FARMACIA"."COMENZI" ("ID_COMANDA") PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Index DEPOZIT_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "C##FARMACIA"."DEPOZIT_PK" ON "C##FARMACIA"."DEPOZIT" ("ID_PRODUS") PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Index FARMACII_PK
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "C##FARMACIA"."FARMACII_PK" ON "C##FARMACIA"."FARMACII" ("ID_FARMACIE") PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+--------------------------------------------------------
+--  DDL for Procedure NR_COMENZI
+--------------------------------------------------------
+set define off;
+
+  CREATE OR REPLACE EDITIONABLE PROCEDURE "C##FARMACIA"."NR_COMENZI" IS
+BEGIN
+
+DECLARE
+    ID_PRODUS1  NUMBER;
+    ID_FARMACIE1 NUMBER;
+    ID_COMANDA1 NUMBER;
+    CANTITATE1 NUMBER;
+    COUNT1 NUMBER;
+    COUNT2 NUMBER;
+
+BEGIN
+    FOR i IN (SELECT DISTINCT id_produs INTO id_produs1 FROM comenzi ORDER BY id_produs) LOOP
+        count2 := 0;
+        FOR j IN (SELECT DISTINCT id_farmacie INTO id_farmacie1 FROM comenzi ) LOOP
+            count1 := 0;
+            FOR k IN (SELECT id_comanda, sum(cantitate) as cant INTO id_comanda1, cantitate1 FROM comenzi 
+            WHERE id_produs=i.id_produs AND id_farmacie=j.id_farmacie GROUP BY id_comanda, id_produs, id_farmacie) LOOP
+                count1 := count1+1;
+                count2 := count2+1;
+                DBMS_OUTPUT.PUT_LINE('Cantitatea produsului ' || i.id_produs || ' comandata de farmacia ' || j.id_farmacie || ' este '  || k.cant);
+            END LOOP;
+            DBMS_OUTPUT.PUT_LINE('Numarul de comenzi ale produsului ' || i.id_produs || ' de la farmacia ' || j.id_farmacie || ' este '  || count1);
+
+         END LOOP;
+         DBMS_OUTPUT.PUT_LINE('Numarul total de comenzi ale produsului ' || i.id_produs ||  ' este '  || count2);
+    END LOOP;   
+END; 
+
+END NR_COMENZI;
+--------------------------------------------------------
+--  Constraints for Table FARMACII
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."FARMACII" MODIFY ("ID_FARMACIE" NOT NULL ENABLE)
+  ALTER TABLE "C##FARMACIA"."FARMACII" ADD CONSTRAINT "FARMACII_PK" PRIMARY KEY ("ID_FARMACIE") USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) ENABLE
+--------------------------------------------------------
+--  Constraints for Table DEPOZIT
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."DEPOZIT" MODIFY ("ID_PRODUS" NOT NULL ENABLE)
+  ALTER TABLE "C##FARMACIA"."DEPOZIT" ADD CONSTRAINT "DEPOZIT_PK" PRIMARY KEY ("ID_PRODUS") USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) ENABLE
+--------------------------------------------------------
+--  Constraints for Table COMENZI
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."COMENZI" MODIFY ("ID_COMANDA" NOT NULL ENABLE)
+  ALTER TABLE "C##FARMACIA"."COMENZI" ADD CONSTRAINT "COMENZI_PK" PRIMARY KEY ("ID_COMANDA") USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) ENABLE
+--------------------------------------------------------
+--  Constraints for Table CATEGORII
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."CATEGORII" MODIFY ("ID_CATEGORIE" NOT NULL ENABLE)
+  ALTER TABLE "C##FARMACIA"."CATEGORII" ADD CONSTRAINT "CATEGORII_PK" PRIMARY KEY ("ID_CATEGORIE") USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) ENABLE
+--------------------------------------------------------
+--  Ref Constraints for Table COMENZI
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."COMENZI" ADD CONSTRAINT "COMENZI_FK1" FOREIGN KEY ("ID_PRODUS") REFERENCES "C##FARMACIA"."DEPOZIT" ("ID_PRODUS") ON DELETE CASCADE ENABLE
+  ALTER TABLE "C##FARMACIA"."COMENZI" ADD CONSTRAINT "COMENZI_FK2" FOREIGN KEY ("ID_FARMACIE") REFERENCES "C##FARMACIA"."FARMACII" ("ID_FARMACIE") ON DELETE CASCADE ENABLE
+--------------------------------------------------------
+--  Ref Constraints for Table DEPOZIT
+--------------------------------------------------------
+
+  ALTER TABLE "C##FARMACIA"."DEPOZIT" ADD CONSTRAINT "DEPOZIT_FK1" FOREIGN KEY ("ID_CATEGORIE") REFERENCES "C##FARMACIA"."CATEGORII" ("ID_CATEGORIE") ON DELETE CASCADE ENABLE
